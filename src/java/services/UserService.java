@@ -21,7 +21,11 @@ public class UserService {
     }
 
     public int update(String username, String password, String firstname, String lastname, String email) throws Exception {
-        User user = new User(username, password, firstname, lastname, email);
+        User user = get(username);
+        user.setPassword(password);
+        user.setFirstname(firstname);
+        user.setLastname(lastname);
+        user.setEmail(email);
         return userDB.update(user);
     }
 
