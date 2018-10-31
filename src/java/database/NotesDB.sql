@@ -14,3 +14,9 @@ CREATE TABLE users (
 INSERT INTO users(username, password)
 VALUES("admin","password");
 COMMIT;
+
+CREATE TABLE notes (
+    noteId INT NOT NULL,
+    dateCreated DATETIME NOT NULL,
+    contents NVARCHAR(10000) NOT NULL,
+    CONSTRAINT PK_noteId PRIMARY KEY (noteId));
