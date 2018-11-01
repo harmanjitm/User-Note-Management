@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import models.Note;
-import models.User;
 
 /**
  *
@@ -23,16 +22,14 @@ import models.User;
  */
 public class NoteDB
 {
-    ConnectionPool pool;
-    Connection connection;
     
     public int insert(Note note) throws NotesDBException
     {
-        pool = ConnectionPool.getInstance();
-        connection = pool.getConnection();
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
 
         try {
-            String preparedQuery = "INSERT INTO notes (noteId, dateCreated, contents) VALUES (?, ?, ?)";
+            String preparedQuery = "INSERT INTO notes (noteId, dateCreated, contents) VALUES (?, ?, ?);";
             PreparedStatement ps = connection.prepareStatement(preparedQuery);
             ps.setInt(1, note.getNoteId());
             ps.setDate(2, (Date) note.getDateCreated());
@@ -49,17 +46,18 @@ public class NoteDB
     
     public int update(Note note) throws NotesDBException
     {
-        pool = ConnectionPool.getInstance();
-        connection = pool.getConnection();
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        int rows = 0;
         
         try{
-            String preparedQuery = "UPDATE notes SET noteId = ?, dateCreated = ?, contents = ? WHERE noteId = ?";
+            String preparedQuery = "UPDATE notes SET noteId = ?, dateCreated = ?, contents = ? WHERE noteId = ?;";
             PreparedStatement ps = connection.prepareStatement(preparedQuery);
             ps.setInt(1, note.getNoteId());
             ps.setDate(2, (Date) note.getDateCreated());
             ps.setString(3, note.getContents());
             ps.setInt(4, note.getNoteId());
-            int rows = ps.executeUpdate();
+            rows = ps.executeUpdate();
             return rows;
         } catch (SQLException ex)
         {
@@ -68,6 +66,7 @@ public class NoteDB
         finally{
             pool.freeConnection(connection);
         }
+        return rows;
     }
     
     public List<Note> getAll() throws NotesDBException
@@ -77,18 +76,17 @@ public class NoteDB
 
         PreparedStatement ps = null;
         ResultSet rs = null;
-
+        List<Note> notes = new ArrayList<>();
+        
         try {
             ps = connection.prepareStatement("SELECT * FROM notes;");
             rs = ps.executeQuery();
-            List<Note> notes = new ArrayList<>();
             while (rs.next()) {
                 notes.add(new Note(rs.getInt("noteId"),
                         rs.getDate("dateCreated"),
                         rs.getString("contents")));
             }
             pool.freeConnection(connection);
-            return notes;
         } catch (SQLException ex) {
             Logger.getLogger(UserDB.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
@@ -96,20 +94,55 @@ public class NoteDB
                 rs.close();
                 ps.close();
             } catch (SQLException ex) {
+                Logger.getLogger(NoteDB.class.getName()).log(Level.SEVERE, null, ex);
             }
             pool.freeConnection(connection);
         }
+        return notes;
     }
     
     public Note getNote(int noteId) throws NotesDBException
     {
-        pool = ConnectionPool.getInstance();
-        connection = pool.getConnection();
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        
+        PreparedStatement ps;
+        ResultSet rs;
+        Note note = null;
+        
+        try {
+            ps = connection.prepareStatement("SELECT * FROM notes WHERE noteId = ?;");
+            ps.setInt(1, noteId);
+            rs = ps.executeQuery();
+            note = new Note(rs.getInt("noteId"), rs.getDate("dateCreated"), rs.getString("contents"));
+        } catch (SQLException ex) {
+            Logger.getLogger(NoteDB.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        finally {
+            pool.freeConnection(connection);
+        }
+        return note;
     }
     
     public int delete(Note note) throws NotesDBException
     {
-        pool = ConnectionPool.getInstance();
-        connection = pool.getConnection();
+        ConnectionPool pool = ConnectionPool.getInstance();
+        Connection connection = pool.getConnection();
+        int rows = 0;
+        
+        try{
+            String preparedQuery = "DELETE FROM notes WHERE noteId = ?;";
+            PreparedStatement ps = connection.prepareStatement(preparedQuery);
+            ps.setInt(1, note.getNoteId());
+            rows = ps.executeUpdate();
+            return rows;
+        } catch (SQLException ex)
+        {
+            Logger.getLogger(NoteDB.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        finally{
+            pool.freeConnection(connection);
+        }
+        return rows;
     }
 }
